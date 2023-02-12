@@ -84,7 +84,7 @@ def get_plate_imgs(path):
 
 def main():
     parser = argparse.ArgumentParser('车牌号识别')
-    parser.add_argument('--FilePath', type=str, default="D:/yolov5-5.0/runs/detect", help='Detect结束所得文件夹的地址')
+    parser.add_argument('--FilePath', type=str, default="./runs/detect", help='Detect结束所得文件夹的地址')
     args = parser.parse_args()
 
     fileNames = os.listdir(args.FilePath)
