@@ -5,7 +5,7 @@ import os
 # https://github.com/ultralytics/yolov5/wiki/Train-Custom-Data#2-create-labels
 
 # path = "/public/ccpd_green/test/"
-path = r"D:\yolov5-5.0\MyData\images\train"
+path = r".\MyData\images\train"
 
 for filename in os.listdir(path):
 
