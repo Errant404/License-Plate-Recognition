@@ -31,7 +31,7 @@ class Timer:
 def txt_recognize(path, ocr):
     imgs_info = get_plate_imgs(path)
     rec_success, rec_failed, plates_total = 0, 0, 0
-    dir_list = os.listdir(path)[1:]
+    dir_list = os.listdir(path)[2:]
     img_total = len(dir_list)
     for imageName in tqdm(dir_list, desc='正在识别车牌', leave=False, mininterval=0.0001):
 
@@ -63,18 +63,19 @@ def get_plate_imgs(path):
         with open(os.path.join(labels_path, txtName)) as f:
             texts = f.readlines()
             yield len(texts)
+
+            imgName = txtName.split('.')[0] + '.jpg'
+            img_path = os.path.join(path, imgName)
+            assert os.path.exists(img_path), "image file {} dose not exist.".format(img_path)
+            Img = cv2.imread(img_path)
+
             for text in texts:
                 text = text.replace('\n', ' ').split(' ')
-                imgName = txtName.split('.')[0] + '.jpg'
-                img_path = os.path.join(path, imgName)
-                img = cv2.imread(img_path)
-                assert os.path.exists(img_path), "image file {} dose not exist.".format(img_path)
-
                 x_c, y_c, w, h = float(text[1]), float(text[2]), float(text[3]), float(text[4])
-                w, h, x_c, y_c = w * img.shape[1], h * img.shape[0], x_c * img.shape[1], y_c * img.shape[0]
+                w, h, x_c, y_c = w * Img.shape[1], h * Img.shape[0], x_c * Img.shape[1], y_c * Img.shape[0]
                 xmin, xmax, ymin, ymax = x_c - w / 2, x_c + w / 2, y_c - h / 2, y_c + h / 2
 
-                img = Image.fromarray(img)
+                img = Image.fromarray(Img)
                 img = img.crop((xmin, ymin, xmax, ymax))
                 img = img.resize((100, 30), Image.LANCZOS)
                 img = np.asarray(img)
@@ -82,13 +83,42 @@ def get_plate_imgs(path):
                 yield img
 
 
+def get_plate_imgs_crop(path, ocr):
+    labels_path = os.path.join(path, 'labels')
+    label_lists = os.listdir(labels_path)
+    label_lists.sort(key=lambda x: os.path.getmtime((labels_path + "\\" + x)))
+
+    txtName = label_lists[-1]
+    name = txtName.split('.')[0]
+    len_name = len(name)
+
+    crop_path = os.path.join(path, 'crops')
+    plate_path = os.path.join(crop_path, 'Plate')
+
+    img_names = filter(lambda x: x[0: len_name] == name, os.listdir(plate_path))
+
+    for imgName in img_names:
+            img_path = os.path.join(plate_path, imgName)
+            img = cv2.imread(img_path)
+            result = ocr.ocr(img, cls=True)
+            try:
+                print(f'[green]{result[0][0][1][0]}[/green]')
+
+            except Exception:
+                print('[red]识别失败[/red]')
+
+
+get_plate_imgs_crop('D:/yolov5-7.0/runs/detect/exp04', PaddleOCR(use_angle_cls=True, lang="ch", use_gpu=True))
+
+
+"""
 def main():
     parser = argparse.ArgumentParser('车牌号识别')
-    parser.add_argument('--FilePath', type=str, default="./runs/detect", help='Detect结束所得文件夹的地址')
+    parser.add_argument('--FilePath', type=str, default="D:/yolov5-7.0/runs/detect", help='Detect结束所得文件夹的地址')
     args = parser.parse_args()
 
     fileNames = os.listdir(args.FilePath)
-    fileNames.sort(key=lambda x: int(x[3:]))
+    fileNames.sort(key=lambda x: os.path.getmtime((args.FilePath + "\\" + x)))
     fileName =fileNames[-1]
 
     path = os.path.join(args.FilePath, fileName)
@@ -107,3 +137,4 @@ if __name__ == "__main__":
     with console.status("[bold yellow]Working on tasks...", spinner='clock') as status:
         with Timer() as timer:
             main()
+"""
